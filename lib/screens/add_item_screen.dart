@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -10,39 +11,15 @@ class AddItemScreen extends StatefulWidget {
 class _AddItemScreenState extends State<AddItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _wantToSwapController = TextEditingController();
-  String _selectedCategory = 'Electronics';
-  String _selectedCondition = 'Like New';
-  String _selectedLocation = 'Dhaka';
+  final _descController = TextEditingController();
+  final _wantController = TextEditingController();
+  String _category = 'Electronics';
+  String _condition = 'Like New';
+  String _location = 'Dhaka';
 
-  final List<String> _categories = [
-    'Electronics',
-    'Sports',
-    'Books',
-    'Furniture',
-    'Clothing',
-    'Other'
-  ];
-
-  final List<String> _conditions = [
-    'Brand New',
-    'Like New',
-    'Good',
-    'Fair',
-    'Poor'
-  ];
-
-  final List<String> _locations = [
-    'Dhaka',
-    'Chittagong',
-    'Sylhet',
-    'Rajshahi',
-    'Khulna',
-    'Barisal',
-    'Rangpur',
-    'Mymensingh'
-  ];
+  final List<String> _categories = ['Electronics', 'Sports', 'Books', 'Furniture', 'Clothing', 'Other'];
+  final List<String> _conditions = ['Brand New', 'Like New', 'Good', 'Fair', 'Poor'];
+  final List<String> _locations = ['Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Rangpur', 'Mymensingh'];
 
   @override
   Widget build(BuildContext context) {
@@ -52,238 +29,82 @@ class _AddItemScreenState extends State<AddItemScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         centerTitle: true,
+        actions: [
+          IconButton(icon: const Icon(Icons.logout), onPressed: () => _showLogoutDialog(context)),
+        ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Item Name',
-                      hintText: 'e.g., iPhone 13 Pro Max',
-                      prefixIcon: const Icon(Icons.label),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter item name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  DropdownButtonFormField<String>(
-                    value: _selectedCategory,
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      prefixIcon: const Icon(Icons.category),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    items: _categories.map((category) {
-                      return DropdownMenuItem(
-                        value: category,
-                        child: Text(category),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCategory = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      labelText: 'Description',
-                      hintText: 'Describe your item in detail...',
-                      prefixIcon: const Icon(Icons.description),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    maxLines: 3,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter description';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  DropdownButtonFormField<String>(
-                    value: _selectedCondition,
-                    decoration: InputDecoration(
-                      labelText: 'Condition',
-                      prefixIcon: const Icon(Icons.fact_check),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    items: _conditions.map((condition) {
-                      return DropdownMenuItem(
-                        value: condition,
-                        child: Text(condition),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCondition = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: _wantToSwapController,
-                    decoration: InputDecoration(
-                      labelText: 'Want to swap for',
-                      hintText: 'e.g., Samsung S22 Ultra, Cash, etc.',
-                      prefixIcon: const Icon(Icons.swap_horiz),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter what you want in return';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  DropdownButtonFormField<String>(
-                    value: _selectedLocation,
-                    decoration: InputDecoration(
-                      labelText: 'Location',
-                      prefixIcon: const Icon(Icons.location_on),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    items: _locations.map((location) {
-                      return DropdownMenuItem(
-                        value: location,
-                        child: Text(location),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedLocation = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      _showSnackBar('Image upload coming soon!');
-                    },
-                    icon: const Icon(Icons.image),
-                    label: const Text('Upload Image'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  ElevatedButton(
-                    onPressed: _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Post Item',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ],
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Item Name'), validator: (v) => v!.isEmpty ? 'Enter name' : null),
+              const SizedBox(height: 10),
+              DropdownButtonFormField(
+                value: _category,
+                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (v) => setState(() => _category = v!),
+                decoration: const InputDecoration(labelText: 'Category'),
               ),
-            ),
+              const SizedBox(height: 10),
+              TextFormField(controller: _descController, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3, validator: (v) => v!.isEmpty ? 'Enter description' : null),
+              const SizedBox(height: 10),
+              DropdownButtonFormField(
+                value: _condition,
+                items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (v) => setState(() => _condition = v!),
+                decoration: const InputDecoration(labelText: 'Condition'),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(controller: _wantController, decoration: const InputDecoration(labelText: 'Want to swap for'), validator: (v) => v!.isEmpty ? 'Enter what you want' : null),
+              const SizedBox(height: 10),
+              DropdownButtonFormField(
+                value: _location,
+                items: _locations.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
+                onChanged: (v) => setState(() => _location = v!),
+                decoration: const InputDecoration(labelText: 'Location'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item added successfully!')));
+                    Navigator.pop(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(vertical: 15)),
+                child: const Text('Post Item', style: TextStyle(fontSize: 18)),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // নতুন আইটেম তৈরি করি
-      final newItem = Item(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text,
-        description: _descriptionController.text,
-        wantToSwap: _wantToSwapController.text,
-        imageUrl: 'https://picsum.photos/id/${DateTime.now().millisecondsSinceEpoch % 100}/200/200',
-        ownerName: 'Current User',
-        location: _selectedLocation,
-        category: _selectedCategory,
-        condition: _selectedCondition,
-      );
-      
-      // ড্যাশবোর্ডে আইটেম পাঠাই
-      Navigator.pop(context, newItem);
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
     );
   }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _wantToSwapController.dispose();
-    super.dispose();
-  }
-}
-
-// Item মডেল ক্লাস (dashboard এর সাথে মিল রাখতে)
-class Item {
-  final String id;
-  final String name;
-  final String description;
-  final String wantToSwap;
-  final String imageUrl;
-  final String ownerName;
-  final String location;
-  final String category;
-  final String condition;
-
-  Item({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.wantToSwap,
-    required this.imageUrl,
-    required this.ownerName,
-    required this.location,
-    required this.category,
-    required this.condition,
-  });
 }
