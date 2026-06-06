@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -28,7 +29,7 @@ class _MessageScreenState extends State<MessageScreen> {
         lastMessage: 'I am interested in your bike',
         time: 'Yesterday',
         imageUrl: 'https://picsum.photos/id/2/50/50',
-        unread: 0,
+        unread: 1,
       ),
       ChatUser(
         id: '3',
@@ -49,8 +50,20 @@ class _MessageScreenState extends State<MessageScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         centerTitle: true,
-        automaticallyImplyLeading: false,
+        // back button add kora
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _showLogoutDialog(context),
@@ -199,11 +212,7 @@ class _MessageScreenState extends State<MessageScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
-              );
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Logout'),

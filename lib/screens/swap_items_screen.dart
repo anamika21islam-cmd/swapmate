@@ -15,8 +15,20 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
   void initState() {
     super.initState();
     _requests = [
-      SwapRequestItem(id: '1', itemName: 'iPhone 13 Pro Max', ownerName: 'Rahim Khan', status: 'pending', imageUrl: 'https://picsum.photos/id/0/200/200'),
-      SwapRequestItem(id: '2', itemName: 'Gaming Chair', ownerName: 'Sakib Hasan', status: 'accepted', imageUrl: 'https://picsum.photos/id/26/200/200'),
+      SwapRequestItem(
+        id: '1',
+        itemName: 'iPhone 13 Pro Max',
+        ownerName: 'Rahim Khan',
+        status: 'pending',
+        imageUrl: 'https://picsum.photos/id/0/200/200',
+      ),
+      SwapRequestItem(
+        id: '2',
+        itemName: 'Gaming Chair',
+        ownerName: 'Sakib Hasan',
+        status: 'accepted',
+        imageUrl: 'https://picsum.photos/id/26/200/200',
+      ),
     ];
   }
 
@@ -30,7 +42,10 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: () => _showLogoutDialog(context)),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _showLogoutDialog(context),
+          ),
         ],
       ),
       body: _requests.isEmpty
@@ -45,17 +60,32 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                   child: ListTile(
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(req.imageUrl, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image)),
+                      child: Image.network(
+                        req.imageUrl,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image),
+                      ),
                     ),
                     title: Text(req.itemName),
                     subtitle: Text('Owner: ${req.ownerName}'),
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
-                        color: req.status == 'pending' ? Colors.orange : Colors.green,
+                        color: req.status == 'pending'
+                            ? Colors.orange
+                            : Colors.green,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(req.status, style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                        req.status,
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 );
@@ -71,7 +101,10 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
