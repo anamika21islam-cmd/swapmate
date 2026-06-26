@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dashboard_wrapper.dart';
+import 'package:swapmate/main.dart'; // DashboardWrapper এর জন্য
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,9 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Please enter email or mobile'
-                      : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter email or mobile';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -64,8 +67,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -107,7 +113,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           : "Already have an account? ",
                     ),
                     TextButton(
-                      onPressed: () => setState(() => _isLogin = !_isLogin),
+                      onPressed: () {
+                        setState(() {
+                          _isLogin = !_isLogin;
+                        });
+                      },
                       child: Text(
                         _isLogin ? 'Sign Up' : 'Login',
                         style: const TextStyle(color: Colors.green),

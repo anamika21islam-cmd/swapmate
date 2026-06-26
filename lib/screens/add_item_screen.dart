@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'profile_screen.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -13,11 +14,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _wantController = TextEditingController();
-
   String _category = 'Electronics';
   String _condition = 'Like New';
   String _location = 'Dhaka';
-  String _itemType = 'Swap'; // 🔥 নতুন: Swap / Gift
+  String _itemType = 'Swap';
 
   final List<String> _categories = [
     'Electronics',
@@ -44,7 +44,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     'Rangpur',
     'Mymensingh',
   ];
-  final List<String> _itemTypes = ['Swap', 'Gift']; // 🔥 নতুন
+  final List<String> _itemTypes = ['Swap', 'Gift'];
 
   @override
   Widget build(BuildContext context) {
@@ -58,21 +58,26 @@ class _AddItemScreenState extends State<AddItemScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.teal, // 🔥 Changed to Teal
         foregroundColor: Colors.white,
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () => _showLogoutDialog(context),
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
           ),
         ],
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.red.shade50, Colors.white],
+            colors: [Colors.teal.shade50, Colors.white],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -87,13 +92,20 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Item Name',
+                  labelStyle: TextStyle(color: Colors.teal.shade700),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal.shade300),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.label, color: Colors.teal),
                 ),
                 validator: (v) => v!.isEmpty ? 'Enter name' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // Category
               DropdownButtonFormField<String>(
@@ -104,26 +116,40 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 onChanged: (v) => setState(() => _category = v!),
                 decoration: InputDecoration(
                   labelText: 'Category',
+                  labelStyle: TextStyle(color: Colors.teal.shade700),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal.shade300),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.category, color: Colors.teal),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // Description
               TextFormField(
                 controller: _descController,
                 decoration: InputDecoration(
                   labelText: 'Description',
+                  labelStyle: TextStyle(color: Colors.teal.shade700),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal.shade300),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.description, color: Colors.teal),
                 ),
                 maxLines: 3,
                 validator: (v) => v!.isEmpty ? 'Enter description' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // Condition
               DropdownButtonFormField<String>(
@@ -134,14 +160,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 onChanged: (v) => setState(() => _condition = v!),
                 decoration: InputDecoration(
                   labelText: 'Condition',
+                  labelStyle: TextStyle(color: Colors.teal.shade700),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal.shade300),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.fact_check, color: Colors.teal),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 🔥 Item Type: Swap / Gift
+              // Item Type (Swap / Gift)
               DropdownButtonFormField<String>(
                 value: _itemType,
                 items: _itemTypes.map((type) {
@@ -153,7 +186,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           type == 'Swap'
                               ? Icons.swap_horiz
                               : Icons.card_giftcard,
-                          color: type == 'Swap' ? Colors.blue : Colors.red,
+                          color: type == 'Swap' ? Colors.teal : Colors.orange,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -165,22 +198,36 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 onChanged: (v) => setState(() => _itemType = v!),
                 decoration: InputDecoration(
                   labelText: 'Item Type',
+                  labelStyle: TextStyle(color: Colors.teal.shade700),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal.shade300),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.swap_vert, color: Colors.teal),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 🔥 Conditionally show "Want to swap for" (only for Swap)
+              // Want to swap for (only for Swap)
               if (_itemType == 'Swap') ...[
                 TextFormField(
                   controller: _wantController,
                   decoration: InputDecoration(
                     labelText: 'Want to swap for',
+                    labelStyle: TextStyle(color: Colors.teal.shade700),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.teal.shade300),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: Colors.teal, width: 2),
+                    ),
+                    prefixIcon: Icon(Icons.swap_horiz, color: Colors.teal),
                   ),
                   validator: (v) {
                     if (_itemType == 'Swap' && (v == null || v.isEmpty)) {
@@ -189,7 +236,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
               ],
 
               // Location
@@ -201,71 +248,69 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 onChanged: (v) => setState(() => _location = v!),
                 decoration: InputDecoration(
                   labelText: 'Location',
+                  labelStyle: TextStyle(color: Colors.teal.shade700),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal.shade300),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.teal, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.location_on, color: Colors.teal),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // Submit Button
+              // 🔥 Post Button (Teal)
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    String msg = _itemType == 'Swap'
-                        ? 'Item added for Swap!'
-                        : '🎁 Item added as Gift!';
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(msg)));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _itemType == 'Swap'
+                              ? '✅ Item added for Swap!'
+                              : '🎁 Item added as Gift!',
+                        ),
+                        backgroundColor: Colors.teal,
+                      ),
+                    );
                     Navigator.pop(context);
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _itemType == 'Swap'
-                      ? Colors.blue
-                      : Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  elevation: 4,
                 ),
-                child: Text(
-                  _itemType == 'Swap' ? 'Post as Swap' : 'Post as Gift 🎁',
-                  style: const TextStyle(fontSize: 18, color: Colors.white),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _itemType == 'Swap'
+                          ? Icons.swap_horiz
+                          : Icons.card_giftcard,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      _itemType == 'Swap' ? 'Post as Swap' : 'Post as Gift 🎁',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
       ),
     );
   }

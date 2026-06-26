@@ -5,7 +5,7 @@ import 'screens/all_items_screen.dart';
 import 'screens/swap_items_screen.dart';
 import 'screens/add_item_screen.dart';
 import 'screens/message_screen.dart';
-import 'screens/gift_screen.dart'; // gift screen import
+import 'screens/gift_screen.dart';
 
 void main() {
   runApp(const SwapMateApp());
@@ -42,7 +42,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
     const HomeScreen(),
     const AllItemsScreen(),
     const SwapItemsScreen(),
-    const GiftScreen(), // gift screen added
+    const GiftScreen(),
     const AddItemScreen(),
     const MessageScreen(),
   ];
@@ -75,7 +75,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
           BottomNavigationBarItem(
             icon: Icon(Icons.card_giftcard),
             label: 'Gift',
-          ), // gift button
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Add Item'),
           BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Message'),
         ],

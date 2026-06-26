@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'profile_screen.dart';
 
 class SwapItemsScreen extends StatefulWidget {
   const SwapItemsScreen({super.key});
@@ -44,82 +45,142 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color.fromARGB(255, 230, 209, 177),
+        backgroundColor: Colors.indigo.shade600, // 🔥 Changed to Indigo
         foregroundColor: Colors.white,
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () => _showLogoutDialog(context),
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
           ),
         ],
       ),
       body: Container(
-        color: Colors.orange.shade50,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.indigo.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: _requests.isEmpty
-            ? const Center(
-                child: Text(
-                  'No swap requests yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.orange,
-                  ),
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.swap_horiz,
+                      size: 80,
+                      color: Colors.indigo.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No swap requests yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.indigo.shade400,
+                      ),
+                    ),
+                  ],
                 ),
               )
             : ListView.builder(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 itemCount: _requests.length,
                 itemBuilder: (context, index) {
                   final req = _requests[index];
+                  final isPending = req.status == 'pending';
                   return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 6,
+                    margin: const EdgeInsets.only(bottom: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.shade200),
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white,
+                            isPending
+                                ? Colors.amber.shade50
+                                : Colors.green.shade50,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
                       child: ListTile(
+                        contentPadding: const EdgeInsets.all(12),
                         leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           child: Image.network(
                             req.imageUrl,
-                            width: 50,
-                            height: 50,
+                            width: 60,
+                            height: 60,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.image, color: Colors.orange),
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.indigo.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.image,
+                                color: Colors.indigo.shade400,
+                                size: 30,
+                              ),
+                            ),
                           ),
                         ),
                         title: Text(
                           req.itemName,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
-                        subtitle: Text('Owner: ${req.ownerName}'),
+                        subtitle: Text(
+                          'Owner: ${req.ownerName}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
                         trailing: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: 14,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: req.status == 'pending'
-                                ? Colors.orange
-                                : Colors.green,
-                            borderRadius: BorderRadius.circular(20),
+                            color: isPending
+                                ? Colors.amber.shade400
+                                : Colors.green.shade400,
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (isPending ? Colors.amber : Colors.green)
+                                    .withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Text(
                             req.status,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
                             ),
                           ),
                         ),
@@ -128,34 +189,6 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                   );
                 },
               ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
       ),
     );
   }
