@@ -29,7 +29,7 @@ class _MessageScreenState extends State<MessageScreen> {
         lastMessage: 'I am interested in your bike',
         time: 'Yesterday',
         imageUrl: 'https://picsum.photos/id/2/50/50',
-        unread: 1,
+        unread: 0,
       ),
       ChatUser(
         id: '3',
@@ -46,81 +46,112 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
-        backgroundColor: Colors.green,
+        title: const Text(
+          'Messages',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
         centerTitle: true,
-        // back button add kora
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () => _showLogoutDialog(context),
           ),
         ],
       ),
-      body: _chats.isEmpty
-          ? const Center(child: Text('No messages yet'))
-          : ListView.builder(
-              itemCount: _chats.length,
-              itemBuilder: (context, index) {
-                final chat = _chats[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(chat.imageUrl),
-                    child: chat.imageUrl.isEmpty
-                        ? const Icon(Icons.person)
-                        : null,
+      body: Container(
+        color: Colors.pink.shade50,
+        child: _chats.isEmpty
+            ? const Center(
+                child: Text(
+                  'No messages yet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.pink,
                   ),
-                  title: Text(
-                    chat.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    chat.lastMessage,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        chat.time,
-                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: _chats.length,
+                itemBuilder: (context, index) {
+                  final chat = _chats[index];
+                  return Card(
+                    elevation: 3,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        gradient: LinearGradient(
+                          colors: [Colors.white, Colors.pink.shade50],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                      if (chat.unread > 0)
-                        Container(
-                          margin: const EdgeInsets.only(top: 5),
-                          padding: const EdgeInsets.all(5),
-                          decoration: const BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '${chat.unread}',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                            ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(chat.imageUrl),
+                          child: chat.imageUrl.isEmpty
+                              ? const Icon(Icons.person, color: Colors.pink)
+                              : null,
+                        ),
+                        title: Text(
+                          chat.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                    ],
-                  ),
-                  onTap: () => _showChatDialog(context, chat),
-                );
-              },
-            ),
+                        subtitle: Text(
+                          chat.lastMessage,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              chat.time,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                            if (chat.unread > 0)
+                              Container(
+                                margin: const EdgeInsets.only(top: 5),
+                                padding: const EdgeInsets.all(5),
+                                decoration: const BoxDecoration(
+                                  color: Colors.pink,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '${chat.unread}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        onTap: () => _showChatDialog(context, chat),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
     );
   }
 
@@ -128,9 +159,9 @@ class _MessageScreenState extends State<MessageScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(user.name),
+        title: Text(user.name, style: const TextStyle(color: Colors.pink)),
         content: SizedBox(
-          height: 350,
+          height: 300,
           width: 300,
           child: Column(
             children: [
@@ -157,7 +188,7 @@ class _MessageScreenState extends State<MessageScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.send, color: Colors.green),
+                    icon: const Icon(Icons.send, color: Colors.pink),
                     onPressed: () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,7 +218,7 @@ class _MessageScreenState extends State<MessageScreen> {
         margin: const EdgeInsets.all(5),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isMe ? Colors.green : Colors.grey[300],
+          color: isMe ? Colors.pink : Colors.grey[300],
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
@@ -212,7 +243,11 @@ class _MessageScreenState extends State<MessageScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Logout'),

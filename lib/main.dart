@@ -5,7 +5,7 @@ import 'screens/all_items_screen.dart';
 import 'screens/swap_items_screen.dart';
 import 'screens/add_item_screen.dart';
 import 'screens/message_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/gift_screen.dart'; // gift screen import
 
 void main() {
   runApp(const SwapMateApp());
@@ -22,13 +22,7 @@ class SwapMateApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/dashboard': (context) => const DashboardWrapper(),
-        '/profile': (context) => const ProfileScreen(),
-        '/add': (context) => const AddItemScreen(),
-      },
+      home: LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -48,6 +42,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
     const HomeScreen(),
     const AllItemsScreen(),
     const SwapItemsScreen(),
+    const GiftScreen(), // gift screen added
     const AddItemScreen(),
     const MessageScreen(),
   ];
@@ -66,12 +61,23 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'All'),
-          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: 'Swap'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Add'),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Msg'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'All Items',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.swap_horiz),
+            label: 'Swap Items',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.card_giftcard),
+            label: 'Gift',
+          ), // gift button
+          BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Add Item'),
+          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Message'),
         ],
       ),
     );

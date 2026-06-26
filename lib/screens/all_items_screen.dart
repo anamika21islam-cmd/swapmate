@@ -81,49 +81,87 @@ class _AllItemsScreenState extends State<AllItemsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Items'),
-        backgroundColor: Colors.green,
+        title: const Text(
+          'All Items',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () => _showLogoutDialog(context),
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(10),
-        itemCount: _allItems.length,
-        itemBuilder: (context, index) {
-          final item = _allItems[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  item.imageUrl,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.image),
+      body: Container(
+        color: Colors.blue.shade50,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: _allItems.length,
+          itemBuilder: (context, index) {
+            final item = _allItems[index];
+            return Card(
+              elevation: 3,
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [Colors.white, Colors.blue.shade50],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      item.imageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.image, color: Colors.blue),
+                    ),
+                  ),
+                  title: Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${item.category} | ${item.location} | Wants: ${item.wantToSwap}',
+                  ),
+                  trailing: ElevatedButton(
+                    onPressed: () => _showSwapDialog(item),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text(
+                      'Swap',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
               ),
-              title: Text(item.name),
-              subtitle: Text(
-                '${item.category} | ${item.location} | Wants: ${item.wantToSwap}',
-              ),
-              trailing: ElevatedButton(
-                onPressed: () => _showSwapDialog(item),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                child: const Text('Swap'),
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -147,7 +185,7 @@ class _AllItemsScreenState extends State<AllItemsScreen> {
                   SnackBar(content: Text('Request sent to ${item.ownerName}')),
                 );
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
               child: const Text('Send'),
             ),
           ],
