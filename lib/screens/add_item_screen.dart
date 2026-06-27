@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart';
 
 class AddItemScreen extends StatefulWidget {
@@ -109,7 +108,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
               // Category
               DropdownButtonFormField<String>(
-                value: _category,
+                initialValue: _category,
                 items: _categories.map((c) {
                   return DropdownMenuItem<String>(value: c, child: Text(c));
                 }).toList(),
@@ -153,7 +152,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
               // Condition
               DropdownButtonFormField<String>(
-                value: _condition,
+                initialValue: _condition,
                 items: _conditions.map((c) {
                   return DropdownMenuItem<String>(value: c, child: Text(c));
                 }).toList(),
@@ -176,7 +175,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
               // Item Type (Swap / Gift)
               DropdownButtonFormField<String>(
-                value: _itemType,
+                initialValue: _itemType,
                 items: _itemTypes.map((type) {
                   return DropdownMenuItem<String>(
                     value: type,
@@ -241,7 +240,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
               // Location
               DropdownButtonFormField<String>(
-                value: _location,
+                initialValue: _location,
                 items: _locations.map((l) {
                   return DropdownMenuItem<String>(value: l, child: Text(l));
                 }).toList(),

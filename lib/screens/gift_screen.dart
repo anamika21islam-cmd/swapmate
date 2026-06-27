@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart'; // 🔥 Import
 
 class GiftScreen extends StatefulWidget {
@@ -125,7 +124,7 @@ class _GiftScreenState extends State<GiftScreen> {
                               height: 120,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
+                              errorBuilder: (_, _, _) => const Icon(
                                 Icons.card_giftcard,
                                 size: 60,
                                 color: Colors.purple,

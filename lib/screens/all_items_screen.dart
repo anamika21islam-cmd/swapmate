@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart'; // 🔥 Import
 
 class AllItemsScreen extends StatefulWidget {
@@ -137,7 +136,7 @@ class _AllItemsScreenState extends State<AllItemsScreen> {
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
+                      errorBuilder: (_, _, _) =>
                           const Icon(Icons.image, color: Colors.blue),
                     ),
                   ),

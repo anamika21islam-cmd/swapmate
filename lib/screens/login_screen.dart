@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:swapmate/main.dart'; // DashboardWrapper এর জন্য
+import '../main.dart'; // Jhamela ta ekhane chilo, eta relative import kora hoyeche
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

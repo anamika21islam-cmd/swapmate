@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/all_items_screen.dart';
@@ -7,7 +9,31 @@ import 'screens/add_item_screen.dart';
 import 'screens/message_screen.dart';
 import 'screens/gift_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Supabase.initialize(
+      url: 'https://qridchgklmajtmnyxcfn.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyaWRjaGdrbG1hanRtbnl4Y2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTA0MTUsImV4cCI6MjA5ODA2NjQxNX0.2dzbkmVgAk9kdPWAtt6Rm19GbsjughQoShOB5n0mXpk',
+    );
+
+    print("✅ Supabase Initialized Successfully");
+
+    // Database connect hoyeche kina tar testing
+    final supabase = Supabase.instance.client;
+    await supabase
+        .from('profiles')
+        .select()
+        .limit(1); // Ekhane 'profiles' add kora hoyeche
+
+    print("✅ Database is fully connected and responded!");
+  } catch (e) {
+    // Jodi table na thake tao error ashbe, jar mane holo internet cross kore db peyeche!
+    print("ℹ️ Supabase Response Check: $e");
+  }
+
   runApp(const SwapMateApp());
 }
 
@@ -17,13 +43,13 @@ class SwapMateApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'SwapMate',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: LoginScreen(),
-      debugShowCheckedModeBanner: false,
+      home: const LoginScreen(),
     );
   }
 }
@@ -38,13 +64,13 @@ class DashboardWrapper extends StatefulWidget {
 class _DashboardWrapperState extends State<DashboardWrapper> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const AllItemsScreen(),
-    const SwapItemsScreen(),
-    const GiftScreen(),
-    const AddItemScreen(),
-    const MessageScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    AllItemsScreen(),
+    SwapItemsScreen(),
+    GiftScreen(),
+    AddItemScreen(),
+    MessageScreen(),
   ];
 
   @override
@@ -53,15 +79,15 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(

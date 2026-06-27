@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart';
 
 class SwapItemsScreen extends StatefulWidget {
@@ -126,7 +125,7 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                             width: 60,
                             height: 60,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               width: 60,
                               height: 60,
                               decoration: BoxDecoration(

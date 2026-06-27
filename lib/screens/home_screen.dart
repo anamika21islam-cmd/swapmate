@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart'; // 🔥 Import Profile
 
 class HomeScreen extends StatefulWidget {
@@ -199,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 70,
                         height: 70,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, _, _) => const Icon(
                           Icons.image,
                           size: 50,
                           color: Colors.grey,
