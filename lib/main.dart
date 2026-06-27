@@ -21,16 +21,11 @@ Future<void> main() async {
 
     print("✅ Supabase Initialized Successfully");
 
-    // Database connect hoyeche kina tar testing
     final supabase = Supabase.instance.client;
-    await supabase
-        .from('profiles')
-        .select()
-        .limit(1); // Ekhane 'profiles' add kora hoyeche
+    await supabase.from('profiles').select().limit(1);
 
     print("✅ Database is fully connected and responded!");
   } catch (e) {
-    // Jodi table na thake tao error ashbe, jar mane holo internet cross kore db peyeche!
     print("ℹ️ Supabase Response Check: $e");
   }
 
@@ -64,13 +59,13 @@ class DashboardWrapper extends StatefulWidget {
 class _DashboardWrapperState extends State<DashboardWrapper> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    AllItemsScreen(),
-    SwapItemsScreen(),
-    GiftScreen(),
-    AddItemScreen(),
-    MessageScreen(),
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const AllItemsScreen(),
+    const SwapItemsScreen(),
+    const GiftScreen(),
+    AddItemScreen(), // 🔥 const বাদ
+    const MessageScreen(),
   ];
 
   @override

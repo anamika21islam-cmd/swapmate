@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart'; // 🔥 Import Profile
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'profile_screen.dart';
+import 'add_item_screen.dart';
+import 'item_details_screen.dart'; // নতুন স্ক্রিনটি ইমপোর্ট করলাম
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,8 +12,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _supabase = Supabase.instance.client;
   List<Item> _allItems = [];
+  bool _isLoading = true;
   String _selectedCategory = 'All';
+
   final List<String> _categories = [
     'All',
     'Electronics',
@@ -27,100 +33,77 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadItems();
   }
 
-  void _loadItems() {
-    _allItems = [
-      Item(
-        id: '1',
-        name: 'iPhone 13 Pro Max',
-        description: 'Like new, 256GB',
-        wantToSwap: 'Samsung S22 Ultra',
-        imageUrl: 'https://picsum.photos/id/0/200/200',
-        ownerName: 'Rahim',
-        location: 'Dhaka',
-        category: 'Electronics',
-        condition: 'Like New',
-      ),
-      Item(
-        id: '2',
-        name: 'Mountain Bike',
-        description: 'Giant brand, 21 gears',
-        wantToSwap: 'Gym equipment',
-        imageUrl: 'https://picsum.photos/id/20/200/200',
-        ownerName: 'Karim',
-        location: 'Chittagong',
-        category: 'Sports',
-        condition: 'Good',
-      ),
-      Item(
-        id: '3',
-        name: 'English Grammar Book',
-        description: 'Cambridge University Press',
-        wantToSwap: 'Any novel',
-        imageUrl: 'https://picsum.photos/id/24/200/200',
-        ownerName: 'Fatema',
-        location: 'Dhaka',
-        category: 'Books',
-        condition: 'Like New',
-      ),
-      Item(
-        id: '4',
-        name: 'Gaming Chair',
-        description: 'High back, adjustable',
-        wantToSwap: 'Monitor',
-        imageUrl: 'https://picsum.photos/id/26/200/200',
-        ownerName: 'Sakib',
-        location: 'Sylhet',
-        category: 'Furniture',
-        condition: 'Good',
-      ),
-      Item(
-        id: '5',
-        name: 'Sony Headphones',
-        description: 'Wireless, noise cancel',
-        wantToSwap: 'Smartwatch',
-        imageUrl: 'https://picsum.photos/id/30/200/200',
-        ownerName: 'Nadia',
-        location: 'Dhaka',
-        category: 'Electronics',
-        condition: 'Like New',
-      ),
-    ];
+  Future<void> _loadItems() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _supabase.from('items').select();
+
+      setState(() {
+        _allItems = (response as List<dynamic>).map((item) {
+          return Item(
+            id: item['id']?.toString() ?? '',
+            userId: item['user_id']?.toString() ?? '',
+            name: item['name']?.toString() ?? 'No Name',
+            description: item['description']?.toString() ?? '',
+            wantToSwap: item['want_to_swap']?.toString() ?? '',
+            imageUrl:
+                item['image_url']?.toString() ??
+                'https://picsum.photos/200/200',
+            ownerName: 'User',
+            location: item['location']?.toString() ?? 'Unknown',
+            category: item['category']?.toString() ?? 'Other',
+            condition: item['condition']?.toString() ?? 'Good',
+            itemType: item['item_type']?.toString() ?? 'Swap',
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      await _supabase.from('items').delete().eq('id', id);
+      _loadItems();
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Item deleted successfully!')),
+        );
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Item> filteredItems = _allItems;
-    if (_selectedCategory != 'All') {
-      filteredItems = _allItems
-          .where((item) => item.category == _selectedCategory)
-          .toList();
-    }
+    final currentUserId = _supabase.auth.currentUser?.id;
+    List<Item> filteredItems = _selectedCategory == 'All'
+        ? _allItems
+        : _allItems
+              .where((item) => item.category == _selectedCategory)
+              .toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'SwapMate',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
         centerTitle: true,
-        automaticallyImplyLeading: false,
         actions: [
-          // 🔥 Logout সরিয়ে Profile আইকন দিলাম
           IconButton(
             icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            ),
           ),
         ],
         bottom: PreferredSize(
@@ -128,36 +111,32 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             color: Colors.green.shade700,
             height: 45,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 final category = _categories[index];
-                final isSelected = _selectedCategory == category;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedCategory = category),
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 5,
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.white : Colors.transparent,
+                      color: _selectedCategory == category
+                          ? Colors.white
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.5)),
                     ),
+                    alignment: Alignment.center,
                     child: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected
-                            ? Colors.green.shade700
+                        color: _selectedCategory == category
+                            ? Colors.green
                             : Colors.white,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.w500,
-                        fontSize: 15,
                       ),
                     ),
                   ),
@@ -167,132 +146,108 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: filteredItems.isEmpty
-          ? const Center(
-              child: Text(
-                'No items found',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey,
-                ),
-              ),
-            )
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddItemScreen()),
+          );
+          if (result == true) _loadItems();
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : filteredItems.isEmpty
+          ? const Center(child: Text('No items found'))
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: filteredItems.length,
               itemBuilder: (context, index) {
                 final item = filteredItems[index];
+                final isOwner = currentUserId == item.userId;
+
                 return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.only(bottom: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  elevation: 3,
+                  margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        item.imageUrl,
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.image,
-                          size: 50,
-                          color: Colors.grey,
+                    // 🔥 এখানে onTap যুক্ত করা হয়েছে
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ItemDetailsScreen(item: item),
                         ),
-                      ),
+                      );
+                    },
+                    leading: Image.network(
+                      item.imageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
                     ),
-                    title: Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    title: Row(
                       children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          '${item.category} | ${item.location}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey,
+                        Text(item.name),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
                           ),
-                        ),
-                        Text(
-                          'Wants: ${item.wantToSwap}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
+                          decoration: BoxDecoration(
+                            color: item.itemType == 'Swap'
+                                ? Colors.teal.shade100
+                                : Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            item.itemType,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: item.itemType == 'Swap'
+                                  ? Colors.teal
+                                  : Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    trailing: ElevatedButton(
-                      onPressed: () => _showSwapDialog(context, item),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
-                      ),
-                      child: const Text(
-                        'Swap',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                    subtitle: Text('${item.category} | ${item.location}'),
+                    trailing: isOwner
+                        ? PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'delete') _deleteItem(item.id);
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('Edit'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          )
+                        : null,
                   ),
                 );
               },
             ),
     );
   }
-
-  void _showSwapDialog(BuildContext context, Item item) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Swap Request'),
-        content: Text(
-          'Send swap request to ${item.ownerName} for ${item.name}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Request sent to ${item.ownerName}!')),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Send'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
+// Item ক্লাসের ডেফিনিশনটি এখানে আছে
 class Item {
   final String id,
+      userId,
       name,
       description,
       wantToSwap,
@@ -300,9 +255,12 @@ class Item {
       ownerName,
       location,
       category,
-      condition;
+      condition,
+      itemType;
+
   Item({
     required this.id,
+    required this.userId,
     required this.name,
     required this.description,
     required this.wantToSwap,
@@ -311,5 +269,6 @@ class Item {
     required this.location,
     required this.category,
     required this.condition,
+    required this.itemType,
   });
 }
