@@ -124,9 +124,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildStatCard('Items', _myItems.length.toString()),
-                        _buildStatCard('Swaps', '0'),
-                        _buildStatCard('Rating', '0.0'),
+                        Expanded(child: _buildStatCard('Items', _myItems.length.toString())),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildStatCard('Swaps', '0')),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildStatCard('Rating', '0.0')),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -152,11 +154,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
-                            childAspectRatio: 0.7,
+                            childAspectRatio: 0.75,
                           ),
                       itemCount: _myItems.length,
                       itemBuilder: (context, index) {
@@ -171,31 +173,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  height: 80,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: item['image_url'] != null
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Image.network(
-                                            item['image_url'],
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => const Icon(
-                                              Icons.image,
-                                              size: 40,
-                                              color: Colors.teal,
+                                Expanded(
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Colors.teal.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: item['image_url'] != null
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.network(
+                                              item['image_url'],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                                Icons.image,
+                                                size: 40,
+                                                color: Colors.teal,
+                                              ),
                                             ),
+                                          )
+                                        : const Icon(
+                                            Icons.image,
+                                            size: 40,
+                                            color: Colors.teal,
                                           ),
-                                        )
-                                      : const Icon(
-                                          Icons.image,
-                                          size: 40,
-                                          color: Colors.teal,
-                                        ),
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -266,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildStatCard(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart'; // Item class টি এখানে আছে
 import 'chat_screen.dart'; // নতুন চ্যাট স্ক্রিন
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ItemDetailsScreen extends StatelessWidget {
   final Item item;
@@ -9,17 +10,21 @@ class ItemDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOwner = Supabase.instance.client.auth.currentUser?.id == item.userId;
+
     return Scaffold(
       appBar: AppBar(title: Text(item.name)),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              item.imageUrl,
-              width: double.infinity,
-              height: 250,
-              fit: BoxFit.cover,
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.network(
+                item.imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -96,7 +101,7 @@ class ItemDetailsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
+      bottomNavigationBar: isOwner ? null : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [

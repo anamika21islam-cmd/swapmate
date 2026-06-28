@@ -57,7 +57,7 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.indigo.shade600, // 🔥 Changed to Indigo
+        backgroundColor: Colors.blue, // 🔥 Changed to Blue
         foregroundColor: Colors.white,
         centerTitle: true,
         automaticallyImplyLeading: false,
@@ -76,13 +76,13 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.indigo.shade50, Colors.white],
+            colors: [Colors.blue.shade50, Colors.blue.shade100],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.indigo))
+            ? const Center(child: CircularProgressIndicator(color: Colors.blue))
             : _requests.isEmpty
                 ? Center(
                     child: Column(
@@ -91,7 +91,7 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                         Icon(
                           Icons.swap_horiz,
                           size: 80,
-                          color: Colors.indigo.shade300,
+                          color: Colors.blue.shade300,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -99,21 +99,25 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
-                            color: Colors.indigo.shade400,
+                            color: Colors.blue.shade400,
                           ),
                         ),
                       ],
                     ),
                   )
-                : ListView.builder(
-                padding: const EdgeInsets.all(14),
+                : GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 220,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.75,
+                ),
                 itemCount: _requests.length,
                 itemBuilder: (context, index) {
                   final req = _requests[index];
-                  final isPending = req.status == 'pending';
                   return Card(
-                    elevation: 6,
-                    margin: const EdgeInsets.only(bottom: 14),
+                    elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -121,82 +125,96 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.white,
-                            isPending
-                                ? Colors.amber.shade50
-                                : Colors.green.shade50,
-                          ],
+                          colors: [Colors.white, Colors.blue.shade50],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(12),
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            req.imageUrl,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.indigo.shade100,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.image,
-                                color: Colors.indigo.shade400,
-                                size: 30,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    ),
+                                    child: Image.network(
+                                      req.imageUrl,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(
+                                        Icons.image,
+                                        size: 60,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    req.itemName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    'Owner: ${req.ownerName}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              req.status,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                        ),
-                        title: Text(
-                          req.itemName,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Owner: ${req.ownerName}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isPending
-                                ? Colors.amber.shade400
-                                : Colors.green.shade400,
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (isPending ? Colors.amber : Colors.green).withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Viewing ${req.itemName}...'),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            req.status,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
+                            ),
+                            child: const Text(
+                              'Details',
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   );

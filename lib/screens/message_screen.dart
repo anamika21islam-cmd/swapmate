@@ -205,8 +205,8 @@ class _MessageScreenState extends State<MessageScreen> {
       builder: (context) => AlertDialog(
         title: Text(user.name, style: TextStyle(color: Colors.blue.shade700)),
         content: SizedBox(
-          height: 350,
-          width: 320,
+          height: MediaQuery.of(context).size.height * 0.5,
+          width: double.maxFinite,
           child: Column(
             children: [
               Expanded(

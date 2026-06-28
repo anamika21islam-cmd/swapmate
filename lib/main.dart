@@ -88,6 +88,8 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
