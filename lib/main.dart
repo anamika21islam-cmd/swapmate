@@ -15,18 +15,18 @@ Future<void> main() async {
   try {
     await Supabase.initialize(
       url: 'https://qridchgklmajtmnyxcfn.supabase.co',
-      anonKey:
+      publishableKey:
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyaWRjaGdrbG1hanRtbnl4Y2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTA0MTUsImV4cCI6MjA5ODA2NjQxNX0.2dzbkmVgAk9kdPWAtt6Rm19GbsjughQoShOB5n0mXpk',
     );
 
-    print("✅ Supabase Initialized Successfully");
+    debugPrint("✅ Supabase Initialized Successfully");
 
     final supabase = Supabase.instance.client;
     await supabase.from('profiles').select().limit(1);
 
-    print("✅ Database is fully connected and responded!");
+    debugPrint("✅ Database is fully connected and responded!");
   } catch (e) {
-    print("ℹ️ Supabase Response Check: $e");
+    debugPrint("ℹ️ Supabase Response Check: $e");
   }
 
   runApp(const SwapMateApp());
@@ -59,14 +59,26 @@ class DashboardWrapper extends StatefulWidget {
 class _DashboardWrapperState extends State<DashboardWrapper> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const AllItemsScreen(),
-    const SwapItemsScreen(),
-    const GiftScreen(),
-    AddItemScreen(), // 🔥 const বাদ
-    const MessageScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeScreen(),
+      const AllItemsScreen(),
+      const SwapItemsScreen(),
+      const GiftScreen(),
+      AddItemScreen(
+        onSaved: () {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        },
+      ),
+      const MessageScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

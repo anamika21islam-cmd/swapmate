@@ -68,15 +68,17 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await _supabase.from('items').delete().eq('id', id);
       _loadItems();
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Item deleted successfully!')),
         );
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+      }
     }
   }
 

@@ -172,7 +172,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.blue.withOpacity(0.3),
+                                      color: Colors.blue.withValues(alpha: 0.3),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -279,7 +279,7 @@ class _MessageScreenState extends State<MessageScreen> {
           boxShadow: isMe
               ? [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.2),
+                    color: Colors.blue.withValues(alpha: 0.2),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),

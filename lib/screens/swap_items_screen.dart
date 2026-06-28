@@ -168,7 +168,7 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                             boxShadow: [
                               BoxShadow(
                                 color: (isPending ? Colors.amber : Colors.green)
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),

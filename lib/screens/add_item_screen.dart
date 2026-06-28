@@ -4,7 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddItemScreen extends StatefulWidget {
-  const AddItemScreen({super.key});
+  final VoidCallback? onSaved;
+  const AddItemScreen({super.key, this.onSaved});
 
   @override
   State<AddItemScreen> createState() => _AddItemScreenState();
@@ -22,7 +23,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String _category = 'Electronics';
   String _condition = 'Brand New'; // ডিফল্ট কন্ডিশন
   String _itemType = 'Swap'; // ডিফল্ট টাইপ
-  String _location = 'Dhaka';
+  final String _location = 'Dhaka';
   bool _isLoading = false;
 
   final List<String> _categories = [
@@ -41,16 +42,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
     'Poor',
   ];
   final List<String> _itemTypes = ['Swap', 'Gift'];
-  final List<String> _locations = [
-    'Dhaka',
-    'Chittagong',
-    'Sylhet',
-    'Rajshahi',
-    'Khulna',
-    'Barisal',
-    'Rangpur',
-    'Mymensingh',
-  ];
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -94,7 +85,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
       await Supabase.instance.client.from('items').insert(data);
       if (!mounted) return;
-      Navigator.pop(context, true);
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context, true);
+      } else {
+        if (widget.onSaved != null) {
+          widget.onSaved!();
+        }
+      }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -149,7 +146,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _category,
+                initialValue: _category,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),
@@ -161,7 +158,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _condition,
+                initialValue: _condition,
                 decoration: const InputDecoration(
                   labelText: 'Condition',
                   border: OutlineInputBorder(),
@@ -173,7 +170,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _itemType,
+                initialValue: _itemType,
                 decoration: const InputDecoration(
                   labelText: 'Item Type',
                   border: OutlineInputBorder(),
