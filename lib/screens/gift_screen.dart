@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_screen.dart'; // 🔥 Import
 
 class GiftScreen extends StatefulWidget {
@@ -10,33 +11,38 @@ class GiftScreen extends StatefulWidget {
 
 class _GiftScreenState extends State<GiftScreen> {
   List<GiftItem> _gifts = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _gifts = [
-      GiftItem(
-        id: '1',
-        name: 'Flower Bouquet',
-        price: 'Free',
-        imageUrl: 'https://picsum.photos/id/10/200/200',
-        description: 'Beautiful red roses',
-      ),
-      GiftItem(
-        id: '2',
-        name: 'Chocolate Box',
-        price: 'Free',
-        imageUrl: 'https://picsum.photos/id/11/200/200',
-        description: 'Assorted chocolates',
-      ),
-      GiftItem(
-        id: '3',
-        name: 'Handmade Card',
-        price: 'Free',
-        imageUrl: 'https://picsum.photos/id/12/200/200',
-        description: 'Personalized greeting card',
-      ),
-    ];
+    _loadGifts();
+  }
+
+  Future<void> _loadGifts() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await Supabase.instance.client
+          .from('items')
+          .select()
+          .eq('item_type', 'Gift');
+
+      setState(() {
+        _gifts = (response as List<dynamic>).map((item) {
+          return GiftItem(
+            id: item['id']?.toString() ?? '',
+            name: item['name']?.toString() ?? 'No Name',
+            price: 'Free', // Gifts are usually free
+            imageUrl: item['image_url']?.toString() ?? 'https://picsum.photos/200/200',
+            description: item['description']?.toString() ?? '',
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -76,18 +82,20 @@ class _GiftScreenState extends State<GiftScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: _gifts.isEmpty
-            ? const Center(
-                child: Text(
-                  'No gifts available',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.purple,
-                  ),
-                ),
-              )
-            : GridView.builder(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.purple))
+            : _gifts.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No gifts available',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  )
+                : GridView.builder(
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,

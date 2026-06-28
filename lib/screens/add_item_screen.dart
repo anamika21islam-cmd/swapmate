@@ -67,6 +67,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      String imageUrl = '';
+      if (_selectedImage != null) {
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${user.id}.jpg';
+        await Supabase.instance.client.storage
+            .from('item_images')
+            .upload(fileName, _selectedImage!);
+        imageUrl = Supabase.instance.client.storage
+            .from('item_images')
+            .getPublicUrl(fileName);
+      } else {
+        imageUrl = 'https://picsum.photos/200/200';
+      }
+
       final data = {
         'user_id': user.id,
         'name': _nameController.text.trim(),
@@ -78,8 +91,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ? _wantController.text.trim()
             : null,
         'location': _location,
-        'image_url':
-            'https://picsum.photos/200/200', // আপলোডের পর এখানে ইমেজ ইউআরএল হবে
+        'image_url': imageUrl,
         'is_available': true,
       };
 
@@ -100,121 +112,329 @@ class _AddItemScreenState extends State<AddItemScreen> {
     setState(() => _isLoading = false);
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.grey.shade600),
+      prefixIcon: Icon(icon, color: const Color(0xFF16A34A)),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF16A34A), width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Item'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.teal),
+      backgroundColor: const Color(0xFFF8FAF8),
+      body: Column(
+        children: [
+          // Premium Header
+          Container(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 20,
+              right: 20,
+              bottom: 30,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF16A34A), Color(0xFF10B981)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 48), // Match roughly the size of the previous IconButton to keep layout balanced
+                    const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 28),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Add Item',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
                   ),
-                  child: _selectedImage != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                        )
-                      : const Icon(
-                          Icons.camera_alt,
-                          size: 50,
-                          color: Colors.teal,
-                        ),
                 ),
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: _categories
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) => setState(() => _category = v!),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                initialValue: _condition,
-                decoration: const InputDecoration(
-                  labelText: 'Condition',
-                  border: OutlineInputBorder(),
-                ),
-                items: _conditions
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) => setState(() => _condition = v!),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                initialValue: _itemType,
-                decoration: const InputDecoration(
-                  labelText: 'Item Type',
-                  border: OutlineInputBorder(),
-                ),
-                items: _itemTypes
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) => setState(() => _itemType = v!),
-              ),
-              if (_itemType == 'Swap') ...[
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _wantController,
-                  decoration: const InputDecoration(
-                    labelText: 'Want to swap for',
-                    border: OutlineInputBorder(),
+                const SizedBox(height: 5),
+                Text(
+                  'Share something amazing',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
                   ),
                 ),
               ],
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _descController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveItem,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                  child: Text(_isLoading ? "Posting..." : "Post Item"),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // Form Area
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Upload Photo Component
+                    const Text(
+                      'Photos',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        height: 180,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.3), width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withValues(alpha: 0.05),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: _selectedImage != null
+                            ? Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(18),
+                                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 10,
+                                    right: 10,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _selectedImage = null),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.cloud_upload_outlined,
+                                      size: 40,
+                                      color: Color(0xFF16A34A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Upload Photos',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF16A34A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Tap to add photos',
+                                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Item Details Section
+                    const Text(
+                      'Item Details',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 20,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: _buildInputDecoration('Item Name', Icons.label_outline),
+                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            initialValue: _category,
+                            decoration: _buildInputDecoration('Category', Icons.category_outlined),
+                            icon: const Icon(Icons.expand_more, color: Color(0xFF16A34A)),
+                            items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                            onChanged: (v) => setState(() => _category = v!),
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            initialValue: _condition,
+                            decoration: _buildInputDecoration('Condition', Icons.star_border_outlined),
+                            icon: const Icon(Icons.expand_more, color: Color(0xFF16A34A)),
+                            items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                            onChanged: (v) => setState(() => _condition = v!),
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            initialValue: _itemType,
+                            decoration: _buildInputDecoration('Item Type', Icons.swap_horiz_outlined),
+                            icon: const Icon(Icons.expand_more, color: Color(0xFF16A34A)),
+                            items: _itemTypes.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                            onChanged: (v) => setState(() => _itemType = v!),
+                          ),
+                          
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            child: _itemType == 'Swap'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 16),
+                                    child: TextFormField(
+                                      controller: _wantController,
+                                      decoration: _buildInputDecoration('Want to swap for', Icons.sync_alt),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _descController,
+                            decoration: _buildInputDecoration('Description', Icons.description_outlined).copyWith(
+                              alignLabelWithHint: true,
+                            ),
+                            maxLines: 3,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Post Button
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF16A34A), Color(0xFF10B981)],
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF16A34A).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveItem,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                        child: _isLoading
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    "Posting...",
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ],
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.send_rounded, color: Colors.white),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Post Item",
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

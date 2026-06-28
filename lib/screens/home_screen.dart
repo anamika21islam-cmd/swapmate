@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_screen.dart';
 import 'add_item_screen.dart';
-import 'item_details_screen.dart'; // নতুন স্ক্রিনটি ইমপোর্ট করলাম
+import 'item_details_screen.dart';
+import 'edit_item_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -64,9 +65,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _deleteItem(String id) async {
+  Future<void> _deleteItem(Item item) async {
     try {
-      await _supabase.from('items').delete().eq('id', id);
+      if (!item.imageUrl.contains('picsum.photos')) {
+        try {
+          final uri = Uri.parse(item.imageUrl);
+          final pathSegments = uri.pathSegments;
+          if (pathSegments.isNotEmpty) {
+            final fileName = pathSegments.last;
+            await _supabase.storage.from('item_images').remove([fileName]);
+          }
+        } catch (e) {
+          debugPrint('Storage deletion error: $e');
+        }
+      }
+      await _supabase
+          .from('items')
+          .delete()
+          .eq('id', item.id)
+          .eq('user_id', _supabase.auth.currentUser!.id);
       _loadItems();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +97,103 @@ class _HomeScreenState extends State<HomeScreen> {
         ).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
       }
     }
+  }
+
+  void _confirmDelete(Item item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('Delete Post'),
+        content: const Text('Are you sure you want to delete this post?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteItem(item);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showItemOptions(BuildContext context, Item item) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.edit, color: Colors.blue),
+                  ),
+                  title: const Text(
+                    'Edit Post',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context); // close bottom sheet
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditItemScreen(item: item),
+                      ),
+                    );
+                    if (result == true) _loadItems();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.delete, color: Colors.red),
+                  ),
+                  title: const Text(
+                    'Delete Post',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context); // close bottom sheet
+                    _confirmDelete(item);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -219,23 +333,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     subtitle: Text('${item.category} | ${item.location}'),
                     trailing: isOwner
-                        ? PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'delete') _deleteItem(item.id);
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Edit'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
+                        ? IconButton(
+                            icon: const Icon(Icons.more_vert),
+                            onPressed: () => _showItemOptions(context, item),
                           )
                         : null,
                   ),

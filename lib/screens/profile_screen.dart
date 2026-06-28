@@ -11,6 +11,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _profile;
+  List<Map<String, dynamic>> _myItems = [];
   bool _isLoading = true;
 
   @override
@@ -34,8 +35,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .eq('user_id', user.id)
           .maybeSingle();
 
+      final itemsResponse = await Supabase.instance.client
+          .from('items')
+          .select()
+          .eq('user_id', user.id);
+
       setState(() {
         _profile = response;
+        _myItems = List<Map<String, dynamic>>.from(itemsResponse);
         _isLoading = false;
       });
     } catch (e) {
@@ -117,9 +124,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildStatCard('Items', '5'),
-                        _buildStatCard('Swaps', '3'),
-                        _buildStatCard('Rating', '4.8'),
+                        _buildStatCard('Items', _myItems.length.toString()),
+                        _buildStatCard('Swaps', '0'),
+                        _buildStatCard('Rating', '0.0'),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -151,21 +158,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             mainAxisSpacing: 12,
                             childAspectRatio: 0.7,
                           ),
-                      itemCount: 2,
+                      itemCount: _myItems.length,
                       itemBuilder: (context, index) {
-                        final items = [
-                          {
-                            'name': 'iPhone 13 Pro Max',
-                            'desc': 'Like new, 256GB',
-                            'cat': 'Electronics',
-                          },
-                          {
-                            'name': 'Gaming Chair',
-                            'desc': 'High back, adjustable',
-                            'cat': 'Furniture',
-                          },
-                        ];
-                        final item = items[index];
+                        final item = _myItems[index];
                         return Card(
                           elevation: 3,
                           shape: RoundedRectangleBorder(
@@ -183,25 +178,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.teal.shade100,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(
-                                    Icons.image,
-                                    size: 40,
-                                    color: Colors.teal,
-                                  ),
+                                  child: item['image_url'] != null
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.network(
+                                            item['image_url'],
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => const Icon(
+                                              Icons.image,
+                                              size: 40,
+                                              color: Colors.teal,
+                                            ),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.image,
+                                          size: 40,
+                                          color: Colors.teal,
+                                        ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  item['name']!,
+                                  item['name'] ?? 'No Name',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
-                                  item['desc']!,
+                                  item['description'] ?? '',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[600],
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -213,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    item['cat']!,
+                                    item['category'] ?? 'Category',
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: Colors.teal.shade700,

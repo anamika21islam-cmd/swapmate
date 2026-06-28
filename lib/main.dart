@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/all_items_screen.dart';
 import 'screens/swap_items_screen.dart';
 import 'screens/add_item_screen.dart';
 import 'screens/message_screen.dart';
@@ -66,7 +65,6 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
     super.initState();
     _screens = [
       const HomeScreen(),
-      const AllItemsScreen(),
       const SwapItemsScreen(),
       const GiftScreen(),
       AddItemScreen(
@@ -97,10 +95,6 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'All Items',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.swap_horiz),
             label: 'Swap Items',

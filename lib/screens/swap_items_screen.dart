@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_screen.dart';
 
 class SwapItemsScreen extends StatefulWidget {
@@ -10,26 +11,38 @@ class SwapItemsScreen extends StatefulWidget {
 
 class _SwapItemsScreenState extends State<SwapItemsScreen> {
   List<SwapRequestItem> _requests = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _requests = [
-      SwapRequestItem(
-        id: '1',
-        itemName: 'iPhone 13 Pro Max',
-        ownerName: 'Rahim Khan',
-        status: 'pending',
-        imageUrl: 'https://picsum.photos/id/0/200/200',
-      ),
-      SwapRequestItem(
-        id: '2',
-        itemName: 'Gaming Chair',
-        ownerName: 'Sakib Hasan',
-        status: 'accepted',
-        imageUrl: 'https://picsum.photos/id/26/200/200',
-      ),
-    ];
+    _loadSwapItems();
+  }
+
+  Future<void> _loadSwapItems() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await Supabase.instance.client
+          .from('items')
+          .select()
+          .eq('item_type', 'Swap');
+
+      setState(() {
+        _requests = (response as List<dynamic>).map((item) {
+          return SwapRequestItem(
+            id: item['id']?.toString() ?? '',
+            itemName: item['name']?.toString() ?? 'No Name',
+            ownerName: 'User', // Usually would fetch from profiles table
+            status: (item['is_available'] == true) ? 'Available' : 'Swapped',
+            imageUrl: item['image_url']?.toString() ?? 'https://picsum.photos/200/200',
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -68,29 +81,31 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: _requests.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.swap_horiz,
-                      size: 80,
-                      color: Colors.indigo.shade300,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.indigo))
+            : _requests.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.swap_horiz,
+                          size: 80,
+                          color: Colors.indigo.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No swap items yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.indigo.shade400,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No swap requests yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.indigo.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
+                  )
+                : ListView.builder(
                 padding: const EdgeInsets.all(14),
                 itemCount: _requests.length,
                 itemBuilder: (context, index) {
@@ -167,8 +182,7 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                             borderRadius: BorderRadius.circular(25),
                             boxShadow: [
                               BoxShadow(
-                                color: (isPending ? Colors.amber : Colors.green)
-                                    .withValues(alpha: 0.3),
+                                color: (isPending ? Colors.amber : Colors.green).withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),
