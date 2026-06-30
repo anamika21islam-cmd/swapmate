@@ -25,15 +25,33 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        margin: const EdgeInsets.all(20),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _authenticate() async {
     if (!_formKey.currentState!.validate()) return;
 
     // Check password match for sign up
     if (!_isLogin &&
         _passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Passwords do not match!')),
-      );
+      _showErrorSnackBar('Passwords do not match!');
       return;
     }
 
@@ -94,11 +112,27 @@ class _LoginScreenState extends State<LoginScreen> {
           });
         }
       }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid login credentials')) {
+        _showErrorSnackBar('Invalid email or password.');
+      } else {
+        _showErrorSnackBar('Something went wrong. Please try again.');
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('❌ Error: ${e.toString()}')));
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('socketexception') ||
+          errorString.contains('clientexception') ||
+          errorString.contains('network') ||
+          errorString.contains('failed host lookup') ||
+          errorString.contains('connection refused') ||
+          errorString.contains('connection timed out')) {
+        _showErrorSnackBar('No internet connection. Please check your network and try again.');
+      } else {
+        _showErrorSnackBar('Something went wrong. Please try again.');
+      }
     }
 
     if (mounted) setState(() => _isLoading = false);
@@ -172,7 +206,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icon(Icons.email_outlined),
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v!.isEmpty ? 'Enter email' : null,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Please enter your email.';
+                      }
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                      if (!emailRegex.hasMatch(v.trim())) {
+                        return 'Please enter a valid email address.';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
 
@@ -196,8 +239,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: const OutlineInputBorder(),
                     ),
                     validator: (v) {
-                      if (v!.isEmpty) return 'Enter password';
-                      if (v.length < 6) return 'Min 6 characters';
+                      if (v == null || v.isEmpty) return 'Please enter your password.';
+                      if (!_isLogin && v.length < 6) return 'Min 6 characters';
                       return null;
                     },
                   ),

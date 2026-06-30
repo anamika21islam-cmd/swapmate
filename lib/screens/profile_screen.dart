@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -71,8 +72,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () => _showLogoutDialog(context),
+            icon: const Icon(Icons.edit, color: Colors.white),
+            onPressed: () async {
+              if (_profile == null) return;
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfileScreen(initialProfile: _profile!),
+                ),
+              );
+              if (result == true) {
+                _loadProfile();
+              }
+            },
           ),
         ],
       ),
@@ -92,10 +104,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.teal,
-                      child: Icon(Icons.person, size: 60, color: Colors.white),
+                      backgroundImage: _profile != null &&
+                              _profile!['image_url'] != null &&
+                              _profile!['image_url'].toString().isNotEmpty
+                          ? NetworkImage(_profile!['image_url'])
+                          : null,
+                      child: _profile != null &&
+                              _profile!['image_url'] != null &&
+                              _profile!['image_url'].toString().isNotEmpty
+                          ? null
+                          : const Icon(Icons.person, size: 60, color: Colors.white),
                     ),
                     const SizedBox(height: 15),
                     Text(
