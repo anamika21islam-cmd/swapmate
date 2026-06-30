@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile_screen.dart';
+import 'home_screen.dart';
+import 'item_details_screen.dart';
 
 class SwapItemsScreen extends StatefulWidget {
   const SwapItemsScreen({super.key});
@@ -29,12 +31,26 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
 
       setState(() {
         _requests = (response as List<dynamic>).map((item) {
+          final fullItem = Item(
+            id: item['id']?.toString() ?? '',
+            userId: item['user_id']?.toString() ?? '',
+            name: item['name']?.toString() ?? 'No Name',
+            description: item['description']?.toString() ?? '',
+            wantToSwap: item['want_to_swap']?.toString() ?? '',
+            imageUrl: item['image_url']?.toString() ?? 'https://picsum.photos/200/200',
+            ownerName: 'User',
+            location: item['location']?.toString() ?? 'Unknown',
+            category: item['category']?.toString() ?? 'Other',
+            condition: item['condition']?.toString() ?? 'Good',
+            itemType: item['item_type']?.toString() ?? 'Swap',
+          );
           return SwapRequestItem(
             id: item['id']?.toString() ?? '',
             itemName: item['name']?.toString() ?? 'No Name',
             ownerName: 'User', // Usually would fetch from profiles table
             status: (item['is_available'] == true) ? 'Available' : 'Swapped',
             imageUrl: item['image_url']?.toString() ?? 'https://picsum.photos/200/200',
+            fullItem: fullItem,
           );
         }).toList();
         _isLoading = false;
@@ -42,6 +58,65 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
     } catch (e) {
       debugPrint('Error: $e');
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _sendSwapRequest(Item item) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You must be logged in to send a request.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
+    if (item.userId == user.id) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You cannot request your own item.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
+    try {
+      final existingRequest = await Supabase.instance.client
+          .from('requests')
+          .select()
+          .eq('sender_id', user.id)
+          .eq('item_id', item.id)
+          .maybeSingle();
+
+      if (existingRequest != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You have already sent a request for this item.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+
+      await Supabase.instance.client.from('requests').insert({
+        'item_id': item.id,
+        'item_name': item.name,
+        'item_type': 'Swap',
+        'sender_id': user.id,
+        'receiver_id': item.userId,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Swap request sent successfully.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sending request: $e', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -116,11 +191,20 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                 itemCount: _requests.length,
                 itemBuilder: (context, index) {
                   final req = _requests[index];
-                  return Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ItemDetailsScreen(item: req.fullItem),
+                        ),
+                      );
+                    },
+                    child: Card(
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
@@ -196,13 +280,7 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                           ),
                           const SizedBox(height: 8),
                           ElevatedButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Viewing ${req.itemName}...'),
-                                ),
-                              );
-                            },
+                            onPressed: () => _sendSwapRequest(req.fullItem),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                               shape: RoundedRectangleBorder(
@@ -210,15 +288,16 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
                               ),
                             ),
                             child: const Text(
-                              'Details',
+                              'Swap Request',
                               style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                  ),
+                );
+              },
               ),
       ),
     );
@@ -227,11 +306,13 @@ class _SwapItemsScreenState extends State<SwapItemsScreen> {
 
 class SwapRequestItem {
   final String id, itemName, ownerName, status, imageUrl;
+  final Item fullItem;
   SwapRequestItem({
     required this.id,
     required this.itemName,
     required this.ownerName,
     required this.status,
     required this.imageUrl,
+    required this.fullItem,
   });
 }

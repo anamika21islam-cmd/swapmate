@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'chat_screen.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -9,304 +10,194 @@ class MessageScreen extends StatefulWidget {
 }
 
 class _MessageScreenState extends State<MessageScreen> {
-  List<ChatUser> _chats = [];
+  final _supabase = Supabase.instance.client;
+  late final String _currentUserId;
+  late final Stream<List<Map<String, dynamic>>> _conversationsStream;
+  late final Stream<List<Map<String, dynamic>>> _unreadMessagesStream;
 
   @override
   void initState() {
     super.initState();
-    _chats = [
-      ChatUser(
-        id: '1',
-        name: 'Rahim Khan',
-        lastMessage: 'Do you still have the iPhone?',
-        time: '10:30 AM',
-        imageUrl: 'https://picsum.photos/id/1/50/50',
-        unread: 2,
-      ),
-      ChatUser(
-        id: '2',
-        name: 'Karim Ahmed',
-        lastMessage: 'I am interested in your bike',
-        time: 'Yesterday',
-        imageUrl: 'https://picsum.photos/id/2/50/50',
-        unread: 1,
-      ),
-      ChatUser(
-        id: '3',
-        name: 'Fatema Begum',
-        lastMessage: 'Swap request accepted!',
-        time: 'Yesterday',
-        imageUrl: 'https://picsum.photos/id/3/50/50',
-        unread: 1,
-      ),
-    ];
+    _currentUserId = _supabase.auth.currentUser!.id;
+    _conversationsStream = _supabase
+        .from('conversations')
+        .stream(primaryKey: ['id'])
+        .order('last_message_time', ascending: false)
+        .map((conversations) => conversations.where((c) => c['participant_1'] == _currentUserId || c['participant_2'] == _currentUserId).toList());
+
+    _unreadMessagesStream = _supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .eq('receiver_id', _currentUserId)
+        .map((messages) => messages.where((m) => m['is_read'] == false).toList());
+  }
+
+  String _formatTime(String? timestamp) {
+    if (timestamp == null) return '';
+    final time = DateTime.tryParse(timestamp);
+    if (time == null) return '';
+    final local = time.toLocal();
+    final now = DateTime.now();
+    
+    if (local.year == now.year && local.month == now.month && local.day == now.day) {
+      final hour = local.hour > 12 ? local.hour - 12 : (local.hour == 0 ? 12 : local.hour);
+      final minute = local.minute.toString().padLeft(2, '0');
+      final ampm = local.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $ampm';
+    } else {
+      return '${local.day}/${local.month}/${local.year}';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Messages',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: Colors.blue.shade700, // 🔥 Changed to Sky Blue
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
-        ],
+        title: const Text('Messages', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade50, Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: _chats.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 80,
-                      color: Colors.blue.shade300,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No messages yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.blue.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(14),
-                itemCount: _chats.length,
+      backgroundColor: Colors.white,
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _unreadMessagesStream,
+        builder: (context, unreadSnapshot) {
+          final unreadMessages = unreadSnapshot.data ?? [];
+          final Map<String, int> unreadCountMap = {};
+          for (var msg in unreadMessages) {
+            final convId = msg['conversation_id'] as String;
+            unreadCountMap[convId] = (unreadCountMap[convId] ?? 0) + 1;
+          }
+
+          return StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _conversationsStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+
+              final conversations = snapshot.data ?? [];
+
+              if (conversations.isEmpty) {
+                return const Center(
+                  child: Text('No messages yet.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                );
+              }
+
+              return ListView.separated(
+                itemCount: conversations.length,
+                separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
                 itemBuilder: (context, index) {
-                  final chat = _chats[index];
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
-                          colors: [Colors.white, Colors.blue.shade50],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(14),
-                        leading: CircleAvatar(
-                          radius: 28,
-                          backgroundImage: NetworkImage(chat.imageUrl),
-                          child: chat.imageUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  color: Colors.blue.shade400,
-                                  size: 28,
-                                )
-                              : null,
-                        ),
-                        title: Text(
-                          chat.name,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                  final conv = conversations[index];
+                  final convId = conv['id'];
+                  final isParticipant1 = conv['participant_1'] == _currentUserId;
+                  final otherUserId = isParticipant1 ? conv['participant_2'] : conv['participant_1'];
+                  final otherUserName = isParticipant1 ? conv['participant_2_name'] ?? 'User' : conv['participant_1_name'] ?? 'User';
+                  
+                  final lastMessage = conv['last_message'] ?? 'Started a conversation';
+                  final lastTime = _formatTime(conv['last_message_time'] ?? conv['created_at']);
+                  final unreadCount = unreadCountMap[convId] ?? 0;
+
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            conversationId: convId,
+                            receiverId: otherUserId,
+                            receiverName: otherUserName,
                           ),
                         ),
-                        subtitle: Text(
-                          chat.lastMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              chat.time,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade500,
-                              ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                            child: Text(
+                              otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : '?',
+                              style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20),
                             ),
-                            const SizedBox(height: 4),
-                            if (chat.unread > 0)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade700,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.3),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        otherUserName,
+                                        style: TextStyle(
+                                          fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Text(
+                                      lastTime,
+                                      style: TextStyle(
+                                        color: unreadCount > 0 ? Colors.blue : Colors.grey,
+                                        fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
-                                child: Text(
-                                  '${chat.unread}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        lastMessage,
+                                        style: TextStyle(
+                                          color: unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                                          fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (unreadCount > 0)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.blue,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          unreadCount > 9 ? '9+' : unreadCount.toString(),
+                                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ),
-                          ],
-                        ),
-                        onTap: () => _showChatDialog(context, chat),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
-              ),
+              );
+            },
+          );
+        },
       ),
     );
   }
-
-  void _showChatDialog(BuildContext context, ChatUser user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(user.name, style: TextStyle(color: Colors.blue.shade700)),
-        content: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          width: double.maxFinite,
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  children: [
-                    _buildBubble('Hi, is the item still available?', true),
-                    _buildBubble('Yes, it is available', false),
-                    _buildBubble('I want to swap', true),
-                    _buildBubble('Ok, let me know when', false),
-                  ],
-                ),
-              ),
-              const Divider(),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  CircleAvatar(
-                    backgroundColor: Colors.blue.shade700,
-                    child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Message sent!'),
-                            backgroundColor: Colors.blue,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: TextStyle(color: Colors.blue.shade700)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBubble(String text, bool isMe) {
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.all(6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: isMe ? Colors.blue.shade600 : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: isMe
-              ? [
-                  BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black87,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ChatUser {
-  final String id, name, lastMessage, time, imageUrl;
-  final int unread;
-  ChatUser({
-    required this.id,
-    required this.name,
-    required this.lastMessage,
-    required this.time,
-    required this.imageUrl,
-    required this.unread,
-  });
 }

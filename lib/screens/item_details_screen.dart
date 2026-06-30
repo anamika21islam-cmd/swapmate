@@ -8,6 +8,81 @@ class ItemDetailsScreen extends StatelessWidget {
 
   const ItemDetailsScreen({super.key, required this.item});
 
+  Future<void> _openChat(BuildContext context) async {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to send a message.')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await Supabase.instance.client
+          .from('conversations')
+          .select()
+          .or('and(participant_1.eq.$currentUserId,participant_2.eq.${item.userId}),and(participant_1.eq.${item.userId},participant_2.eq.$currentUserId)')
+          .maybeSingle();
+
+      String conversationId;
+      if (response != null) {
+        conversationId = response['id'];
+      } else {
+        // Fetch current user name
+        final profileResponse = await Supabase.instance.client
+            .from('profiles')
+            .select('name')
+            .eq('id', currentUserId)
+            .maybeSingle();
+        final currentUserName = profileResponse != null ? profileResponse['name'] as String : 'Unknown';
+
+        final insertResponse = await Supabase.instance.client
+            .from('conversations')
+            .insert({
+              'participant_1': currentUserId,
+              'participant_2': item.userId,
+              'participant_1_name': currentUserName,
+              'participant_2_name': item.ownerName,
+              'item_id': item.id,
+              'item_name': item.name,
+              'item_image_url': item.imageUrl,
+            })
+            .select()
+            .single();
+        conversationId = insertResponse['id'];
+      }
+
+      if (!context.mounted) return;
+      Navigator.pop(context); 
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            conversationId: conversationId,
+            receiverId: item.userId,
+            receiverName: item.ownerName,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context); 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to start conversation. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isOwner = Supabase.instance.client.auth.currentUser?.id == item.userId;
@@ -107,18 +182,7 @@ class ItemDetailsScreen extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // মেসেজ বাটনে ক্লিক করলে চ্যাট স্ক্রিনে যাবে
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        ownerId: item.userId,
-                        ownerName: item.ownerName,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _openChat(context),
                 icon: const Icon(Icons.message),
                 label: const Text("Message"),
               ),

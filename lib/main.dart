@@ -7,6 +7,7 @@ import 'screens/swap_items_screen.dart';
 import 'screens/add_item_screen.dart';
 import 'screens/message_screen.dart';
 import 'screens/gift_screen.dart';
+import 'screens/chat_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,8 +58,11 @@ class DashboardWrapper extends StatefulWidget {
 
 class _DashboardWrapperState extends State<DashboardWrapper> {
   int _selectedIndex = 0;
-
   late final List<Widget> _screens;
+
+  final _supabase = Supabase.instance.client;
+  int _unreadCount = 0;
+  final Set<String> _seenMessageIds = {};
 
   @override
   void initState() {
@@ -76,6 +80,51 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
       ),
       const MessageScreen(),
     ];
+
+    _listenForMessages();
+  }
+
+  void _listenForMessages() {
+    final currentUserId = _supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+
+    _supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .eq('receiver_id', currentUserId)
+        .listen((allMessages) {
+          if (!mounted) return;
+
+          final messages = allMessages
+              .where((m) => m['is_read'] == false)
+              .toList();
+          if (!mounted) return;
+
+          setState(() {
+            _unreadCount = messages.length;
+          });
+
+          for (final msg in messages) {
+            final msgId = msg['id'] as String;
+            final convId = msg['conversation_id'] as String;
+
+            if (!_seenMessageIds.contains(msgId)) {
+              _seenMessageIds.add(msgId);
+
+              if (ChatScreen.currentActiveConversationId != convId) {
+                final text = msg['message'] ?? 'New message';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('New message: $text'),
+                    duration: const Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              }
+            }
+          }
+        });
   }
 
   @override
@@ -95,18 +144,49 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
             _selectedIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.swap_horiz),
             label: 'Swap Items',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.card_giftcard),
             label: 'Gift',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Add Item'),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Message'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.add_box),
+            label: 'Add Item',
+          ),
+          BottomNavigationBarItem(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.message),
+                if (_unreadCount > 0)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        _unreadCount > 9 ? '9+' : _unreadCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            label: 'Message',
+          ),
         ],
       ),
     );
