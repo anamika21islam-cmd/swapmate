@@ -12,7 +12,9 @@ class ItemDetailsScreen extends StatelessWidget {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     if (currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must be logged in to send a message.')),
+        const SnackBar(
+          content: Text('You must be logged in to send a message.'),
+        ),
       );
       return;
     }
@@ -27,39 +29,25 @@ class ItemDetailsScreen extends StatelessWidget {
       final response = await Supabase.instance.client
           .from('conversations')
           .select()
-          .or('and(participant_1.eq.$currentUserId,participant_2.eq.${item.userId}),and(participant_1.eq.${item.userId},participant_2.eq.$currentUserId)')
+          .or(
+            'and(user1_id.eq.$currentUserId,user2_id.eq.${item.userId}),and(user1_id.eq.${item.userId},user2_id.eq.$currentUserId)',
+          )
           .maybeSingle();
 
       String conversationId;
       if (response != null) {
         conversationId = response['id'];
       } else {
-        // Fetch current user name
-        final profileResponse = await Supabase.instance.client
-            .from('profiles')
-            .select('name')
-            .eq('id', currentUserId)
-            .maybeSingle();
-        final currentUserName = profileResponse != null ? profileResponse['name'] as String : 'Unknown';
-
         final insertResponse = await Supabase.instance.client
             .from('conversations')
-            .insert({
-              'participant_1': currentUserId,
-              'participant_2': item.userId,
-              'participant_1_name': currentUserName,
-              'participant_2_name': item.ownerName,
-              'item_id': item.id,
-              'item_name': item.name,
-              'item_image_url': item.imageUrl,
-            })
+            .insert({'user1_id': currentUserId, 'user2_id': item.userId})
             .select()
             .single();
         conversationId = insertResponse['id'];
       }
 
       if (!context.mounted) return;
-      Navigator.pop(context); 
+      Navigator.pop(context);
 
       Navigator.push(
         context,
@@ -71,9 +59,11 @@ class ItemDetailsScreen extends StatelessWidget {
           ),
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint("MESSAGE ERROR: $e");
+      debugPrintStack(stackTrace: st);
       if (!context.mounted) return;
-      Navigator.pop(context); 
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Unable to start conversation. Please try again.'),
@@ -85,7 +75,8 @@ class ItemDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOwner = Supabase.instance.client.auth.currentUser?.id == item.userId;
+    final isOwner =
+        Supabase.instance.client.auth.currentUser?.id == item.userId;
 
     return Scaffold(
       appBar: AppBar(title: Text(item.name)),
@@ -176,43 +167,45 @@ class ItemDetailsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: isOwner ? null : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _openChat(context),
-                icon: const Icon(Icons.message),
-                label: const Text("Message"),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "${item.itemType} request sent to ${item.ownerName}!",
+      bottomNavigationBar: isOwner
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openChat(context),
+                      icon: const Icon(Icons.message),
+                      label: const Text("Message"),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "${item.itemType} request sent to ${item.ownerName}!",
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(
+                        item.itemType == 'Swap'
+                            ? "Send Swap Request"
+                            : "Request Gift",
                       ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text(
-                  item.itemType == 'Swap'
-                      ? "Send Swap Request"
-                      : "Request Gift",
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/chat_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -56,17 +57,22 @@ class DashboardWrapper extends StatefulWidget {
   State<DashboardWrapper> createState() => _DashboardWrapperState();
 }
 
-class _DashboardWrapperState extends State<DashboardWrapper> {
+class _DashboardWrapperState extends State<DashboardWrapper>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   late final List<Widget> _screens;
 
   final _supabase = Supabase.instance.client;
+  final ChatService _chatService = ChatService();
   int _unreadCount = 0;
   final Set<String> _seenMessageIds = {};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _chatService.updatePresence(true);
+
     _screens = [
       const HomeScreen(),
       const SwapItemsScreen(),
@@ -84,6 +90,23 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
     _listenForMessages();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _chatService.updatePresence(true);
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.inactive) {
+      _chatService.updatePresence(false);
+    }
+  }
+
   void _listenForMessages() {
     final currentUserId = _supabase.auth.currentUser?.id;
     if (currentUserId == null) return;
@@ -95,22 +118,28 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
         .listen((allMessages) {
           if (!mounted) return;
 
-          final messages = allMessages
+          final unread = allMessages
               .where((m) => m['is_read'] == false)
               .toList();
-          if (!mounted) return;
 
+          if (!mounted) return;
           setState(() {
-            _unreadCount = messages.length;
+            _unreadCount = unread.length;
           });
 
-          for (final msg in messages) {
+          for (final msg in unread) {
             final msgId = msg['id'] as String;
             final convId = msg['conversation_id'] as String;
 
             if (!_seenMessageIds.contains(msgId)) {
               _seenMessageIds.add(msgId);
 
+              // Mark as delivered since receiver device got it
+              if (msg['status'] == 'sent') {
+                _chatService.markMessageAsDelivered(msgId);
+              }
+
+              // Don't show snackbar if we are currently looking at this conversation
               if (ChatScreen.currentActiveConversationId != convId) {
                 final text = msg['message'] ?? 'New message';
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +147,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
                     content: Text('New message: $text'),
                     duration: const Duration(seconds: 3),
                     behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.teal,
                   ),
                 );
               }

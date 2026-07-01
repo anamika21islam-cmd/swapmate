@@ -40,9 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final response = await _supabase.from('items').select();
 
       setState(() {
-        _allItems = (response as List<dynamic>)
-            .where((item) => item['name']?.toString().toLowerCase() != 'poem')
-            .map((item) {
+        _allItems = (response as List<dynamic>).map((item) {
           return Item(
             id: item['id']?.toString() ?? '',
             userId: item['user_id']?.toString() ?? '',
