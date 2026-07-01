@@ -15,29 +15,77 @@ class ChatBubble extends StatelessWidget {
     final time = DateTime.tryParse(timestamp);
     if (time == null) return '';
     final local = time.toLocal();
-    final hour = local.hour > 12 ? local.hour - 12 : (local.hour == 0 ? 12 : local.hour);
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : (local.hour == 0 ? 12 : local.hour);
     final minute = local.minute.toString().padLeft(2, '0');
     final ampm = local.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $ampm';
   }
 
+  /// WhatsApp-style message status indicator.
+  /// Only shown for messages sent by the current user (isMe == true).
   Widget _buildStatusIcon(String status) {
     if (!isMe) return const SizedBox.shrink();
-    
+
     switch (status) {
       case 'sending':
-        return const Icon(Icons.access_time, size: 12, color: Colors.white70);
+        // Clock icon — message is being uploaded
+        return const SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(
+            strokeWidth: 1.5,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white60),
+          ),
+        );
+
       case 'sent':
-        return const Icon(Icons.check, size: 14, color: Colors.white70);
+        // Single grey tick
+        return const Icon(
+          Icons.check,
+          size: 16,
+          color: Colors.white70,
+        );
+
       case 'delivered':
-        return const Icon(Icons.done_all, size: 14, color: Colors.white70);
+        // Double grey tick (uses a custom stack of two tick icons)
+        return _doubleCheck(Colors.white70);
+
       case 'read':
-        return const Icon(Icons.done_all, size: 14, color: Colors.blueAccent);
+        // Double blue tick
+        return _doubleCheck(Colors.lightBlueAccent);
+
       case 'failed':
-        return const Icon(Icons.error_outline, size: 14, color: Colors.redAccent);
+        return const Icon(
+          Icons.error_outline,
+          size: 14,
+          color: Colors.redAccent,
+        );
+
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  /// Renders two overlapping check marks (WhatsApp-style double tick).
+  Widget _doubleCheck(Color color) {
+    return SizedBox(
+      width: 20,
+      height: 14,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            child: Icon(Icons.check, size: 14, color: color),
+          ),
+          Positioned(
+            left: 6,
+            child: Icon(Icons.check, size: 14, color: color),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -49,25 +97,28 @@ class ChatBubble extends StatelessWidget {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Opacity(
-        opacity: isSending ? 0.7 : 1.0,
+        opacity: isSending ? 0.75 : 1.0,
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
           decoration: BoxDecoration(
-            color: isFailed 
-                ? Colors.red.shade100 
-                : isMe 
-                    ? Colors.teal.shade500 
+            color: isFailed
+                ? Colors.red.shade100
+                : isMe
+                    ? Colors.teal.shade600
                     : Colors.white,
             borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(16),
-              topRight: const Radius.circular(16),
-              bottomLeft: Radius.circular(isMe ? 16 : 4),
-              bottomRight: Radius.circular(isMe ? 4 : 16),
+              topLeft: const Radius.circular(18),
+              topRight: const Radius.circular(18),
+              bottomLeft: Radius.circular(isMe ? 18 : 4),
+              bottomRight: Radius.circular(isMe ? 4 : 18),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withValues(alpha: 0.07),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -75,37 +126,41 @@ class ChatBubble extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Message text
               Text(
                 message['message'] ?? '',
                 style: TextStyle(
-                  color: isFailed 
-                      ? Colors.red.shade900 
-                      : isMe 
-                          ? Colors.white 
+                  color: isFailed
+                      ? Colors.red.shade900
+                      : isMe
+                          ? Colors.white
                           : Colors.black87,
-                  fontSize: 16,
+                  fontSize: 15.5,
+                  height: 1.3,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
+              // Time + status row
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     _formatTime(message['created_at']),
                     style: TextStyle(
-                      color: isFailed 
-                          ? Colors.red.shade700 
-                          : isMe 
-                              ? Colors.teal.shade100 
+                      color: isFailed
+                          ? Colors.red.shade700
+                          : isMe
+                              ? Colors.teal.shade100
                               : Colors.grey.shade500,
-                      fontSize: 11,
+                      fontSize: 10.5,
                     ),
                   ),
                   if (isMe) ...[
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 5),
                     _buildStatusIcon(status),
-                  ]
+                  ],
                 ],
               ),
             ],

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/chat_service.dart';
@@ -19,15 +20,15 @@ Future<void> main() async {
       publishableKey:
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyaWRjaGdrbG1hanRtbnl4Y2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTA0MTUsImV4cCI6MjA5ODA2NjQxNX0.2dzbkmVgAk9kdPWAtt6Rm19GbsjughQoShOB5n0mXpk',
     );
-
     debugPrint("✅ Supabase Initialized Successfully");
-
-    final supabase = Supabase.instance.client;
-    await supabase.from('profiles').select().limit(1);
-
-    debugPrint("✅ Database is fully connected and responded!");
   } catch (e) {
-    debugPrint("ℹ️ Supabase Response Check: $e");
+    debugPrint("ℹ️ Supabase init error: $e");
+  }
+
+  // If a session already exists (persistent login), mark user as online
+  final session = Supabase.instance.client.auth.currentSession;
+  if (session != null) {
+    await ChatService().updatePresence(true);
   }
 
   runApp(const SwapMateApp());
@@ -38,6 +39,7 @@ class SwapMateApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = Supabase.instance.client.auth.currentSession;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SwapMate',
@@ -45,7 +47,7 @@ class SwapMateApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      home: session != null ? const DashboardWrapper() : const LoginScreen(),
     );
   }
 }
@@ -66,11 +68,13 @@ class _DashboardWrapperState extends State<DashboardWrapper>
   final ChatService _chatService = ChatService();
   int _unreadCount = 0;
   final Set<String> _seenMessageIds = {};
+  StreamSubscription<List<Map<String, dynamic>>>? _messageSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Ensure online status is set when the dashboard loads
     _chatService.updatePresence(true);
 
     _screens = [
@@ -92,18 +96,27 @@ class _DashboardWrapperState extends State<DashboardWrapper>
 
   @override
   void dispose() {
+    // Mark offline and clean up subscriptions when dashboard is torn down
+    _chatService.updatePresence(false);
+    _messageSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _chatService.updatePresence(true);
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached ||
-        state == AppLifecycleState.inactive) {
-      _chatService.updatePresence(false);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _chatService.updatePresence(true);
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        _chatService.updatePresence(false);
+        break;
+      case AppLifecycleState.inactive:
+        // Don't change on inactive — it fires briefly during navigation
+        break;
     }
   }
 
@@ -111,7 +124,7 @@ class _DashboardWrapperState extends State<DashboardWrapper>
     final currentUserId = _supabase.auth.currentUser?.id;
     if (currentUserId == null) return;
 
-    _supabase
+    _messageSubscription = _supabase
         .from('messages')
         .stream(primaryKey: ['id'])
         .eq('receiver_id', currentUserId)
@@ -122,7 +135,6 @@ class _DashboardWrapperState extends State<DashboardWrapper>
               .where((m) => m['is_read'] == false)
               .toList();
 
-          if (!mounted) return;
           setState(() {
             _unreadCount = unread.length;
           });
@@ -134,22 +146,25 @@ class _DashboardWrapperState extends State<DashboardWrapper>
             if (!_seenMessageIds.contains(msgId)) {
               _seenMessageIds.add(msgId);
 
-              // Mark as delivered since receiver device got it
-              if (msg['status'] == 'sent') {
+              // Mark as delivered since the receiver's device got it
+              final status = msg['status'] as String?;
+              if (status == 'sent' || status == null) {
                 _chatService.markMessageAsDelivered(msgId);
               }
 
-              // Don't show snackbar if we are currently looking at this conversation
+              // Don't show snackbar if the user is already in that conversation
               if (ChatScreen.currentActiveConversationId != convId) {
                 final text = msg['message'] ?? 'New message';
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('New message: $text'),
-                    duration: const Duration(seconds: 3),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.teal,
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('💬 $text'),
+                      duration: const Duration(seconds: 3),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.teal.shade700,
+                    ),
+                  );
+                }
               }
             }
           }

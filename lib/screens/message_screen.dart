@@ -28,9 +28,13 @@ class _MessageScreenState extends State<MessageScreen> {
     if (time == null) return '';
     final local = time.toLocal();
     final now = DateTime.now();
-    
-    if (local.year == now.year && local.month == now.month && local.day == now.day) {
-      final hour = local.hour > 12 ? local.hour - 12 : (local.hour == 0 ? 12 : local.hour);
+
+    if (local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day) {
+      final hour = local.hour > 12
+          ? local.hour - 12
+          : (local.hour == 0 ? 12 : local.hour);
       final minute = local.minute.toString().padLeft(2, '0');
       final ampm = local.hour >= 12 ? 'PM' : 'AM';
       return '$hour:$minute $ampm';
@@ -43,7 +47,10 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Messages',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -62,7 +69,8 @@ class _MessageScreenState extends State<MessageScreen> {
           return StreamBuilder<List<Map<String, dynamic>>>(
             stream: _conversationsStream,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  !snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }
 
@@ -74,32 +82,47 @@ class _MessageScreenState extends State<MessageScreen> {
 
               if (conversations.isEmpty) {
                 return const Center(
-                  child: Text('No messages yet.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  child: Text(
+                    'No messages yet.',
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
                 );
               }
 
               return ListView.separated(
                 padding: const EdgeInsets.all(12),
                 itemCount: conversations.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final conv = conversations[index];
-                  final convId = conv['id'];
+                  final convId = conv['id'] as String;
                   final currentUserId = _chatService.currentUserId;
-                  final isParticipant1 = conv['user1_id'] == currentUserId;
-                  final otherUserId = isParticipant1 ? conv['user2_id'] : conv['user1_id'];
-                  
-                  final lastMessage = conv['last_message'] ?? 'Started a conversation';
-                  final lastTime = _formatTime(conv['last_message_time'] ?? conv['created_at']);
+
+                  // Support both column naming conventions
+                  final p1 = conv['participant_1'] ?? conv['user1_id'];
+                  final p2 = conv['participant_2'] ?? conv['user2_id'];
+                  final isParticipant1 = p1 == currentUserId;
+                  final otherUserId =
+                      isParticipant1 ? p2 as String : p1 as String;
+
+                  final lastMessage =
+                      conv['last_message'] ?? 'Started a conversation';
+                  final lastTime = _formatTime(
+                      conv['last_message_time'] ?? conv['created_at']);
                   final unreadCount = unreadCountMap[convId] ?? 0;
 
-                  return StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: _chatService.getPresenceStream(otherUserId),
+                  return StreamBuilder<Map<String, dynamic>?>(
+                    stream: _chatService
+                        .getPresenceRealtimeStream(otherUserId),
                     builder: (context, profileSnap) {
-                      final profileData = profileSnap.data?.isNotEmpty == true ? profileSnap.data!.first : null;
-                      final otherUserName = profileData?['name'] ?? 'User';
-                      final otherUserImageUrl = profileData?['image_url'];
-                      final isOnline = profileData?['is_online'] == true;
+                      final profileData = profileSnap.data;
+                      final otherUserName =
+                          profileData?['name'] as String? ?? 'User';
+                      final otherUserImageUrl =
+                          profileData?['image_url'] as String?;
+                      final isOnline =
+                          profileData?['is_online'] == true;
 
                       return ConversationTile(
                         conversationId: convId,

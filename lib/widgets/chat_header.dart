@@ -23,29 +23,64 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
     if (timestamp == null) return 'Offline';
     final time = DateTime.tryParse(timestamp);
     if (time == null) return 'Offline';
-    
+
     final now = DateTime.now();
-    final difference = now.difference(time);
-    
-    if (difference.inMinutes < 1) {
+    final localTime = time.toLocal();
+    final difference = now.difference(localTime);
+
+    if (difference.inSeconds < 60) {
       return 'Last seen just now';
     } else if (difference.inMinutes < 60) {
-      return 'Last seen ${difference.inMinutes} minutes ago';
-    } else if (difference.inHours < 24) {
-      return 'Last seen ${difference.inHours} hours ago';
+      final mins = difference.inMinutes;
+      return 'Last seen $mins ${mins == 1 ? 'min' : 'mins'} ago';
+    } else if (difference.inHours < 24 &&
+        localTime.day == now.day) {
+      // Same day — show time
+      final hour = localTime.hour > 12
+          ? localTime.hour - 12
+          : (localTime.hour == 0 ? 12 : localTime.hour);
+      final minute = localTime.minute.toString().padLeft(2, '0');
+      final ampm = localTime.hour >= 12 ? 'PM' : 'AM';
+      return 'Last seen today at $hour:$minute $ampm';
+    } else if (difference.inDays == 1 ||
+        (now.day - localTime.day == 1 &&
+            now.month == localTime.month &&
+            now.year == localTime.year)) {
+      final hour = localTime.hour > 12
+          ? localTime.hour - 12
+          : (localTime.hour == 0 ? 12 : localTime.hour);
+      final minute = localTime.minute.toString().padLeft(2, '0');
+      final ampm = localTime.hour >= 12 ? 'PM' : 'AM';
+      return 'Last seen yesterday at $hour:$minute $ampm';
     } else {
-      final local = time.toLocal();
-      return 'Last seen ${local.day}/${local.month} at ${local.hour}:${local.minute.toString().padLeft(2, '0')}';
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      final hour = localTime.hour > 12
+          ? localTime.hour - 12
+          : (localTime.hour == 0 ? 12 : localTime.hour);
+      final minute = localTime.minute.toString().padLeft(2, '0');
+      final ampm = localTime.hour >= 12 ? 'PM' : 'AM';
+      return 'Last seen ${localTime.day} ${months[localTime.month]} at $hour:$minute $ampm';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusText = isTyping 
-        ? 'Typing...' 
-        : isOnline 
-            ? 'Online' 
-            : _formatLastSeen(lastSeen);
+    String statusText;
+    Color statusColor;
+
+    if (isTyping) {
+      statusText = 'Typing...';
+      statusColor = Colors.greenAccent.shade100;
+    } else if (isOnline) {
+      statusText = 'Online';
+      statusColor = Colors.greenAccent.shade100;
+    } else {
+      statusText = _formatLastSeen(lastSeen);
+      statusColor = Colors.white60;
+    }
 
     return AppBar(
       backgroundColor: Colors.teal.shade700,
@@ -54,18 +89,49 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: 0,
       title: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.white24,
-            backgroundImage: receiverImageUrl != null ? NetworkImage(receiverImageUrl!) : null,
-            child: receiverImageUrl == null
-                ? Text(
-                    receiverName.isNotEmpty ? receiverName[0].toUpperCase() : '?',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  )
-                : null,
+          // Avatar with online indicator
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 21,
+                backgroundColor: Colors.white24,
+                backgroundImage: receiverImageUrl != null
+                    ? NetworkImage(receiverImageUrl!)
+                    : null,
+                child: receiverImageUrl == null
+                    ? Text(
+                        receiverName.isNotEmpty
+                            ? receiverName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      )
+                    : null,
+              ),
+              if (isOnline)
+                Positioned(
+                  bottom: 1,
+                  right: 1,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade400,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.teal.shade700,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 12),
+          // Name + status
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,19 +140,26 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                 Text(
                   receiverName,
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  statusText,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isOnline || isTyping ? Colors.greenAccent.shade100 : Colors.white70,
-                    fontWeight: isTyping ? FontWeight.bold : FontWeight.normal,
-                    fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    statusText,
+                    key: ValueKey<String>(statusText),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: statusColor,
+                      fontWeight:
+                          isTyping ? FontWeight.w600 : FontWeight.normal,
+                      fontStyle:
+                          isTyping ? FontStyle.italic : FontStyle.normal,
+                    ),
                   ),
                 ),
               ],
